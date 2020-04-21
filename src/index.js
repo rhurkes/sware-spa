@@ -6,11 +6,14 @@ const day_in_us = 24 * hour_in_us;
 const distance_filter_miles = 120;
 const event_retention_in_us = 3 * hour_in_us;
 const ls_config_items_key = 'sware-config-items';
-const ls_config_key = 'sware-config';
+const ls_config_key = 'sware-config_v1';    // NOTE: Bump version if config schema ever changes
 const sev_hail_threshold = 2.0;
 const gps_decimal_precision = 3;
 const tor_related_hazards = ['Tornado', 'WallCloud', 'Funnel'];
 const filterableSources = ['NwsAfd', 'NwsFfw', 'NwsFlw', 'NwsLsr', 'NwsSvr', 'NwsTor', 'SnReport'];
+
+// Elements
+const dialog_content_el = document.getElementById('dialog-content');
 
 // Alert blurbs
 const tor_emergency_blurb = "The National Weather Service has issued a Tornado Emergency.";
@@ -150,7 +153,6 @@ const geo_options = {
 };
 
 function geo_success(pos) {
-    console.log('geo success');
     app.location = { lat: pos.coords.latitude, lon: pos.coords.longitude };
     set_location_status();
 }
@@ -176,13 +178,13 @@ function set_location_status() {
     const isManualConfig = app.config_items.find(x => x.id === 'gpsLocation').toggled;
 
     if (isManualConfig) {
-        app.location_status = 'Manual Location';
+        app.location_status = 'Manual';
     } else {
         const location = get_current_location();
         if (!isNaN(location.lat) && !isNaN(location.lon)) {
             app.location_status = `${location.lat.toFixed(gps_decimal_precision)}, ${location.lon.toFixed(gps_decimal_precision)}`;
         } else {
-            location_status = 'Waiting..';
+            location_status = 'Waiting...';
         }
     }
 }
@@ -287,7 +289,6 @@ const filterEvent = (event, current_location) => {
 
 // Stateful decorations to all events
 const massageEvent = (event, current_location) => {
-    console.log('massaging event with current location', current_location);
     const now = Date.now() * 1000;  // Convert from ms to us
     event.derived.time_ago = get_time_ago(now, event.ingest_ts);
 
@@ -296,7 +297,6 @@ const massageEvent = (event, current_location) => {
         const distance = get_distance(current_location, event.location.point);
         const bearing = get_bearing(current_location, event.location.point);
         if (!isNaN(distance)) {
-            console.log('setting derived', event.title, distance, bearing[1]);
             event.derived.distance = distance;
             event.derived.bearing = bearing[1];
             event.derived.distance_label = `${distance}mi ${bearing[0]}`;
@@ -330,7 +330,6 @@ const get_current_location = () => {
 }
 
 const buildAlertForEvent = (event) => {
-    console.log('building alert for', event.title);
     let use_eas = false;
 
     if (event.seen) {
@@ -556,13 +555,16 @@ const app = new Vue({
             'manualLon': null,
         },
         location: {},
-        location_status: '',
+        location_status: 'Waiting...',
         clock: get_clock(),
+        details_title: '',
         details_source: '',
         details_text: '',
         details_link: '',
         details_time: '',
         sidebar_active: false,
+        details_active: false,
+        intro_dialog_active: true
     },
     methods: {
         showEventDetails: function(event) {
@@ -577,13 +579,18 @@ const app = new Vue({
                     }
                 });
             }
+            this.details_title = event.title;
             this.details_text = event.text;
             this.details_link = event.derived.link;
             this.details_time = `Time: ${event.derived.parsed_dt}`;
+            this.details_active = !this.details_active; // Needed for smaller views
         },
         toggleConfig: function(id) {
             const item = this.config_items.find(x => x.id === id);
             item.toggled = !item.toggled;
+            if (item.id === 'gpsLocation') {
+                set_location_status();
+            }
         },
         toggleSidebar: function() {
             this.sidebar_active = !this.sidebar_active;
@@ -592,13 +599,21 @@ const app = new Vue({
                 save_config();
                 processEvents();
             }
+        },
+        hideDetails: function() {
+            this.details_active = false;
+        },
+        acceptTerms: function() {
+            this.intro_dialog_active = false;
+            // It's necessary to play()/speak() for iOS Safari
+            audioElement.play();
+            synth.speak(new SpeechSynthesisUtterance(''));
+            start_app();
         }
     }
 });
 
-// INIT
-const legalese = 'sware is not to be used while driving and shall not be used to guarantee one\'s safety.\n\nIt is alpha software - use at your own risk!';
-if (confirm(legalese)) {
+const start_app = () => {
     load_config();
     set_location_status();
     let url = `${api_base}/${last_ts}`;
@@ -658,3 +673,5 @@ function queueAlert(text) {
         processQueue();
     }
 }
+
+// INIT - vue app is available

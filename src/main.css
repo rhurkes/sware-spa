@@ -20,6 +20,15 @@ button {
     -moz-user-select: none;
     -webkit-user-select: none;
 }
+
+/* Needed for Safari so inputs can work */
+input, input:before, input:after {
+    -webkit-user-select: initial;
+    -khtml-user-select: initial;
+    -moz-user-select: initial;
+    -ms-user-select: initial;
+    user-select: initial;
+}
 /* end reset */
 
 [v-cloak] { display: none; }
@@ -79,10 +88,45 @@ content {
     display: flex;
 }
 
+#overlay, .dialog {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+}
+
+#overlay {
+    background-color: #000;
+}
+#overlay.active {
+    display: block;
+}
+
+.dialog.active {
+    display: block;
+}
+.dialog-content {
+    padding: 48px;
+    position: fixed;
+    border: 1px solid rgb(50, 50, 50);
+}
+
+.dialog-content > p {
+    margin: 24px 0;
+}
+
+.logo {
+    max-height: 24px;
+    vertical-align: middle;
+}
+
 #events-pane {
-    min-width: 411px;
     max-height: calc(100vh - 56px);
     overflow-y: auto;
+    width: 512px;
+    flex-shrink: 0;
 }
 
 #details-pane {
@@ -90,6 +134,9 @@ content {
     padding: 8px;
     max-height: calc(100vh - 56px);
     overflow-y: auto;
+}
+#details-close-btn-wrapper {
+    display: none;
 }
 
 pre {
@@ -106,14 +153,17 @@ pre {
 #sidebar {
     position: fixed;
     top: 0px;
-    left: -411px;
-    width: 411px;
+    left: -512px;
     opacity: 0;
-
     height: 100%;
     transition: all 350ms cubic-bezier(.6, .05, .28, .91);
     will-change: transform, opacity;
     background-color: rgb(30, 30, 30);
+    width: 512px;
+}
+
+.shadow {
+    box-shadow: 24px 0px 24px rgba(0,0,0,0.4);
 }
 
 #sidebar.active {
@@ -135,22 +185,44 @@ pre {
     padding: 0 16px;
 }
 
+button {
+    background: #F80;
+    min-width: 64px;
+    font-family: Roboto;
+    color: #fff;
+    padding: 6px 16px;
+    font-size: 0.875rem;
+    line-height: 1.75;
+    border-radius: 4px;
+    text-transform: uppercase;
+    transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,border 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+    cursor: pointer;
+    user-select: none;
+    border: none;
+    outline: 0;
+}
+
+button:hover {
+    background-color: #ff6f00;
+}
+
 #right-menu {
     display: flex;
     align-items: center;
 }
 
-#menu-btn, #close-btn {
+#menu-btn, .close-btn {
     font-size: 28px;
     cursor: pointer;
 }
 
-#close-btn-wrapper {
+.logo-wrapper, .close-btn-wrapper {
     height: 64px;
     line-height: 64px;
     display: flex;
     justify-content: space-between;
     padding: 0 16px;
+    background-color: rgb(100, 100, 100);
 }
 
 /* Toggle */
@@ -203,9 +275,9 @@ div.toggle label:active:after {
     transform: scale(1.15, 0.85);
 }
 
-#manual-gps-wrapper input {
+#manual-location-wrapper input {
     font-size: 24px;
-    width: 120px;
+    width: 100px;
 }
 
 input:invalid {
@@ -213,20 +285,64 @@ input:invalid {
 }
 
 #lat-label, #lon-label {
-    position: relative;
     font-size: 12px;
+    height: 16px;
+    line-height: 0;
 }
 
-#lat-label {
-    top: 26px;
-    left: -126px;
+#manual-location-wrapper {
+    height: 88px;
+    display: flex;
+    justify-content: space-evenly;
 }
 
-#lon-label {
-    top: -41px;
-    left: 223px;
+@media all and (max-width: 767px) {
+    #sidebar {
+        left: -100vw;
+        width: 100vw;
+    }
+    #events-pane {
+        width: 100vw;
+    }
+    #details-pane {
+        width: 100vw;
+        left: 100vw;
+        position: fixed;
+        top: 0px;
+        opacity: 0;
+        height: 100%;
+        transition: all 350ms cubic-bezier(.6, .05, .28, .91);
+        will-change: transform, opacity;
+        background-color: rgb(30, 30, 30);
+        box-shadow: none;
+        border: none;
+    }
+    #details-pane.active {
+        left: 0px;
+        opacity: 1;
+        box-shadow: 24px 0px 24px rgba(0,0,0,0.4);
+        padding-top: 96px;
+    }
+    #details-pane > .close-btn-wrapper {
+        margin-bottom: 24px;
+        justify-content: space-between;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+    }
+    .dialog-content {
+        border: none;
+    }
 }
 
-#manual-gps-wrapper {
-    height: 88px
+@media all and (min-width: 768px) {
+    .dialog-content {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    #details-pane > .close-btn-wrapper {
+        display: none;
+    }
 }
