@@ -184,7 +184,7 @@ function set_location_status() {
         if (!isNaN(location.lat) && !isNaN(location.lon)) {
             app.location_status = `${location.lat.toFixed(gps_decimal_precision)}, ${location.lon.toFixed(gps_decimal_precision)}`;
         } else {
-            location_status = 'Waiting...';
+            location_status = 'Waiting for GPS...';
         }
     }
 }
@@ -260,6 +260,11 @@ const get_link = event => {
     return;
 }
 
+/**
+ * Whether or not an event should be considered for alerting or display
+ * @param {*} event 
+ * @param {*} current_location 
+ */
 const filterEvent = (event, current_location) => {
     // Distance filter
     const is_distance_filter = app.config_items.find(x => x.id === 'distanceFilter').toggled;
@@ -278,10 +283,19 @@ const filterEvent = (event, current_location) => {
         }
     }
 
-    // Other filters
+    // AFD filters
     const filter_afds = app.config_items.find(x => x.id === 'hideAfds').toggled;
     if (filter_afds && event.event_type === 'NwsAfd') {
         return false;
+    }
+
+    // Minor Reports filter
+    const filter_minor = app.config_items.find(x => x.id === 'hideMinorReports').toggled;
+    if (filter_minor && (event.event_type === 'NwsLsr' || event.event_type === 'SnReport')) {
+        return (event.report.hazard === 'Tornado' || event.report.hazard === 'Funnel' ||
+            event.report.hazard === 'WallCloud' || event.report.hazard === 'FlashFlood' ||
+            ((event.report.hazard === 'Hail') && event.report.magnitude >= 1.75) ||
+            (event.report.hazard === 'Wind' && event.report.magnitude >= 70))
     }
 
     return true;
@@ -329,16 +343,20 @@ const get_current_location = () => {
     }
 }
 
-const buildAlertForEvent = (event) => {
-    let use_eas = false;
-
+const buildAlertForEvent = (event, current_location) => {
     if (event.seen) {
         return event;
     } else {
         event.seen = true;
     }
 
+    // Check filters and early exit without alerting if not an event the user cares about.
+    if (!filterEvent(event, current_location)) {
+        return event;
+    }
+
     let alert;
+    let use_eas = false;
 
     if (event.report) {
         if (event.report.hazard === 'Tornado') {
@@ -418,7 +436,7 @@ const processEvents = () => {
     const current_location = get_current_location();
     const truncatedEvents = truncateEvents(app.events);
     const massagedEvents = truncatedEvents.map(x => massageEvent(x, current_location));
-    const alertedEvents = massagedEvents.map(buildAlertForEvent);
+    const alertedEvents = massagedEvents.map(x => buildAlertForEvent(x, current_location));
     app.events = alertedEvents
     app.displayEvents = app.events
         .filter(x => filterEvent(x, current_location))
@@ -547,15 +565,17 @@ const app = new Vue({
         config_items: [
             { id: "gpsLocation", text: "Manual Location", toggled: false },
             { id: "hideAfds", text: "Hide AFDs", toggled: false },
+            { id: 'hideMinorReports', text: 'Hide Minor Reports', toggled: false },
             { id: "distanceFilter", text: "Distance Filter", toggled: false },
             { id: "audioAlerts", text: "Audio Alerts", toggled: true },
+            
         ],
         config: {
             'manualLat': null,
             'manualLon': null,
         },
         location: {},
-        location_status: 'Waiting...',
+        location_status: 'Waiting for GPS...',
         clock: get_clock(),
         details_title: '',
         details_source: '',

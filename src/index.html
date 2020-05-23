@@ -3,8 +3,8 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel = "stylesheet" type = "text/css" href = "main.min.css" />
-        <!-- <link rel = "stylesheet" type = "text/css" href = "main.css" /> -->
+        <!-- <link rel = "stylesheet" type = "text/css" href = "main.min.css" /> -->
+        <link rel = "stylesheet" type = "text/css" href = "main.css" />
         <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
         <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
         <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
@@ -34,7 +34,7 @@
             <nav>
                 <div id="menu-btn" v-on:click="toggleSidebar()">☰</div>
                 <div id="right-menu">
-                    <div id="gps">⌖ {{ location_status }}</div>
+                    <div id="gps">{{ location_status }}</div>
                     <span class="divider"> | </span>
                     <div id="clock">{{ clock }}</div>
                 </div>
@@ -95,7 +95,7 @@
             </content>
         </div>
         <script src="vue.min.js"></script>
-        <script src="sigtor.min.js"></script>
-        <!-- <script src="index.js"></script> -->
+        <!-- <script src="sigtor.min.js"></script> -->
+        <script src="index.js"></script>
     </body>
 </html>
