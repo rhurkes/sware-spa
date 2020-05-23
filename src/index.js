@@ -6,7 +6,7 @@ const day_in_us = 24 * hour_in_us;
 const distance_filter_miles = 120;
 const event_retention_in_us = 3 * hour_in_us;
 const ls_config_items_key = 'sware-config-items';
-const ls_config_key = 'sware-config_v1';    // NOTE: Bump version if config schema ever changes
+const ls_config_key = 'sware-config_v2';    // NOTE: Bump version if config schema ever changes
 const sev_hail_threshold = 2.0;
 const gps_decimal_precision = 3;
 const tor_related_hazards = ['Tornado', 'WallCloud', 'Funnel'];
@@ -526,10 +526,13 @@ const load_config = () => {
         
         if (config) {
             app.config = JSON.parse(config);
-        }
 
-        if (config_items) {
-            app.config_items = JSON.parse(config_items);
+            if (config_items) {
+                app.config_items = JSON.parse(config_items);
+            }
+        } else {
+            console.log('No config for latest version found, clearing local storage.')
+            localStorage.clear()
         }
 
         console.log('Loaded config.');
@@ -568,7 +571,6 @@ const app = new Vue({
             { id: 'hideMinorReports', text: 'Hide Minor Reports', toggled: false },
             { id: "distanceFilter", text: "Distance Filter", toggled: false },
             { id: "audioAlerts", text: "Audio Alerts", toggled: true },
-            
         ],
         config: {
             'manualLat': null,
